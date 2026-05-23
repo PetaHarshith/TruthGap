@@ -28,49 +28,33 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.21 0.006 285.885);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.705 0.015 286.067);
 }
 
 .dark {
-  --background: oklch(0.141 0.005 285.823);
+  --background: oklch(0.115 0.005 285.823);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.18 0.006 285.885);
+  --card: oklch(0.165 0.006 285.885);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.18 0.006 285.885);
+  --popover: oklch(0.165 0.006 285.885);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.985 0 0);
   --primary-foreground: oklch(0.21 0.006 285.885);
-  --secondary: oklch(0.274 0.006 286.033);
+  --secondary: oklch(0.235 0.006 286.033);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
+  --muted: oklch(0.225 0.006 286.033);
+  --muted-foreground: oklch(0.685 0.015 286.067);
+  --accent: oklch(0.255 0.006 286.033);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 12%);
   --ring: oklch(0.552 0.016 285.938);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.552 0.016 285.938);
 }
 
 @theme inline {
@@ -93,19 +77,6 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -120,6 +91,215 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings: "ss01", "cv11", "rlig" 1, "calt" 1;
   }
+  ::selection {
+    background: oklch(0.7 0.18 162 / 0.25);
+    color: var(--foreground);
+  }
+}
+
+/* ---------- scrollbars ---------- */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: oklch(1 0 0 / 0.08);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: oklch(1 0 0 / 0.16);
+  background-clip: padding-box;
+}
+
+/* ---------- background mesh & dot grid ---------- */
+.bg-dot-grid {
+  background-image:
+    radial-gradient(circle at 1px 1px, oklch(1 0 0 / 0.06) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.bg-mesh {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+.bg-mesh::before,
+.bg-mesh::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+}
+.bg-mesh::before {
+  width: 520px;
+  height: 520px;
+  top: -120px;
+  left: -80px;
+  background: radial-gradient(circle, oklch(0.6 0.22 250 / 0.5), transparent 70%);
+  animation: meshFloatA 18s ease-in-out infinite;
+}
+.bg-mesh::after {
+  width: 460px;
+  height: 460px;
+  top: 80px;
+  right: -120px;
+  background: radial-gradient(circle, oklch(0.65 0.21 162 / 0.45), transparent 70%);
+  animation: meshFloatB 22s ease-in-out infinite;
+}
+@keyframes meshFloatA {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(60px, 40px) scale(1.08); }
+}
+@keyframes meshFloatB {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-50px, -30px) scale(1.12); }
+}
+
+/* ---------- shimmer / live indicators ---------- */
+@keyframes pulseDot {
+  0%, 100% { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
+  50%      { box-shadow: 0 0 0 6px transparent; opacity: 0.7; }
+}
+.live-dot {
+  position: relative;
+  display: inline-flex;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+.live-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: currentColor;
+  animation: liveRipple 1.6s ease-out infinite;
+}
+@keyframes liveRipple {
+  0%   { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    oklch(1 0 0 / 0.5) 0%,
+    oklch(1 0 0) 50%,
+    oklch(1 0 0 / 0.5) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 3s linear infinite;
+}
+
+/* ---------- card glow ---------- */
+.glow-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    180deg,
+    oklch(0.19 0.006 285 / 0.6) 0%,
+    oklch(0.155 0.005 285 / 0.6) 100%
+  );
+  border: 1px solid oklch(1 0 0 / 0.07);
+}
+.glow-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    600px circle at var(--mx, 50%) var(--my, 0%),
+    oklch(0.6 0.22 250 / 0.06),
+    transparent 40%
+  );
+  transition: opacity 200ms ease;
+}
+
+/* ---------- slide in for log entries ---------- */
+@keyframes slideInRight {
+  0% { opacity: 0; transform: translateX(8px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+.slide-in { animation: slideInRight 200ms ease-out both; }
+
+/* ---------- fade-up entrance ---------- */
+@keyframes fadeUp {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 500ms ease-out both; }
+.fade-up-1 { animation-delay: 60ms; }
+.fade-up-2 { animation-delay: 120ms; }
+.fade-up-3 { animation-delay: 180ms; }
+.fade-up-4 { animation-delay: 240ms; }
+
+/* ---------- terminal block ---------- */
+.terminal {
+  background:
+    linear-gradient(180deg, oklch(0.12 0.005 285) 0%, oklch(0.095 0.005 285) 100%);
+  border: 1px solid oklch(1 0 0 / 0.06);
+  border-radius: 10px;
+  font-family: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+  font-variant-ligatures: none;
+}
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid oklch(1 0 0 / 0.06);
+}
+.terminal-bar > span {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+/* ---------- spinner ---------- */
+@keyframes spin360 { to { transform: rotate(360deg); } }
+.spinner {
+  width: 12px; height: 12px;
+  border: 1.5px solid oklch(1 0 0 / 0.15);
+  border-top-color: oklch(0.7 0.18 162);
+  border-radius: 999px;
+  animation: spin360 700ms linear infinite;
+}
+
+/* ---------- subtle text gradients ---------- */
+.text-gradient {
+  background: linear-gradient(180deg, oklch(1 0 0) 0%, oklch(0.7 0 0) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* mono pill */
+.mono-pill {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: oklch(0.7 0.015 285);
+  border: 1px solid oklch(1 0 0 / 0.08);
+  background: oklch(1 0 0 / 0.02);
+  padding: 3px 7px;
+  border-radius: 999px;
 }
