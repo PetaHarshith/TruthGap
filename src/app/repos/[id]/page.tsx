@@ -350,37 +350,44 @@ export default function RepoPage({ params }: { params: Promise<{ id: string }> }
             {repo.kpis.friction_surface.length > 0 && (
               <section className="space-y-3 fade-up fade-up-4">
                 <div>
-                  <h3 className="text-sm font-medium flex items-center gap-2">
-                    Where the bugs cluster
-                  </h3>
-                  <p className="mt-0.5 text-[11.5px] text-muted-foreground/80">
-                    Doc sections sorted by % of claims that disagree with the code. Higher bars
-                    = more drift in that section.
+                  <h3 className="text-base font-medium">Where the bugs cluster</h3>
+                  <p className="mt-1 text-[12.5px] text-muted-foreground leading-relaxed">
+                    Doc sections ranked by what fraction of their claims disagree with the code.
+                    The number on the right shows{" "}
+                    <span className="text-foreground/90">flagged / total</span> claims in that section.
                   </p>
                 </div>
-                <div className="rounded-xl border border-border/60 divide-y divide-border/40 overflow-hidden bg-card/30 backdrop-blur">
-                  {repo.kpis.friction_surface.map((f) => (
-                    <div
-                      key={f.section}
-                      className="px-4 py-3 flex items-center justify-between text-xs gap-4"
-                    >
-                      <span className="font-mono text-foreground/90 truncate">{f.section}</span>
-                      <div className="flex items-center gap-4 shrink-0">
-                        <div className="w-32 h-1 rounded-full bg-muted/40 overflow-hidden">
-                          <div
-                            className="h-full"
-                            style={{
-                              width: `${f.unverified_pct * 100}%`,
-                              background: "oklch(0.7 0.19 22)",
-                            }}
-                          />
-                        </div>
-                        <span className="font-mono text-muted-foreground/80 tabular-nums w-24 text-right">
-                          {(f.unverified_pct * 100).toFixed(0)}% · {f.count}
+                <div className="rounded-2xl border border-border/50 divide-y divide-border/40 overflow-hidden bg-gradient-to-b from-card/80 to-card/40 backdrop-blur">
+                  {repo.kpis.friction_surface.map((f) => {
+                    const flagged = Math.round(f.unverified_pct * f.count);
+                    const pct = (f.unverified_pct * 100).toFixed(0);
+                    return (
+                      <div
+                        key={f.section}
+                        className="px-4 py-3.5 flex items-center justify-between gap-4 hover:bg-muted/10 transition-colors"
+                      >
+                        <span className="font-mono text-[12.5px] text-foreground/90 truncate flex-1">
+                          {f.section}
                         </span>
+                        <div className="flex items-center gap-4 shrink-0">
+                          <div className="w-40 h-1.5 rounded-full bg-muted/30 overflow-hidden">
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${f.unverified_pct * 100}%`,
+                                background: `linear-gradient(90deg, oklch(0.78 0.18 70), oklch(0.7 0.19 22))`,
+                              }}
+                            />
+                          </div>
+                          <span className="font-mono text-[12px] text-foreground/95 tabular-nums w-28 text-right">
+                            <span className="text-red-300">{flagged}</span>
+                            <span className="text-muted-foreground/60">/{f.count}</span>
+                            <span className="ml-2 text-muted-foreground/70">{pct}%</span>
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}
