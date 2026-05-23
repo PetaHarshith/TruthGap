@@ -11,19 +11,6 @@ export function sql() {
     _sql = postgres(env.DATABASE_URL, {
       max: 10,
       idle_timeout: 20,
-      types: {
-        // pgvector serializes to "[1,2,3]"
-        vector: {
-          to: 25,
-          from: [1184],
-          serialize: (v: number[]) => `[${v.join(",")}]`,
-          parse: (v: string) =>
-            v
-              .slice(1, -1)
-              .split(",")
-              .map((n) => parseFloat(n)),
-        },
-      },
     });
   }
   return _sql;
