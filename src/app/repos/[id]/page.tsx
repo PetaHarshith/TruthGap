@@ -47,10 +47,17 @@ export default function RepoPage({ params }: { params: Promise<{ id: string }> }
   const [data, setData] = useState<RepoData | null>(null);
   const [filter, setFilter] = useState<string>("all");
 
-  const refresh = useCallback(() => {
-    fetch(`/api/repos/${id}`)
-      .then((r) => r.json())
-      .then(setData);
+  const [notFound, setNotFound] = useState(false);
+
+  const refresh = useCallback(async () => {
+    const r = await fetch(`/api/repos/${id}`);
+    if (r.status === 404) {
+      setNotFound(true);
+      return;
+    }
+    const json = await r.json().catch(() => null);
+    if (!json?.repo) return;
+    setData(json);
   }, [id]);
 
   useEffect(() => {
@@ -59,7 +66,25 @@ export default function RepoPage({ params }: { params: Promise<{ id: string }> }
     return () => clearInterval(t);
   }, [refresh]);
 
-  if (!data)
+  if (notFound)
+    return (
+      <>
+        <BackgroundMesh />
+        <Header />
+        <main className="mx-auto max-w-7xl px-6 py-20 text-center">
+          <div className="mono-pill mb-4 inline-block">404</div>
+          <h1 className="text-2xl font-medium">Repo not found</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            This run may have been deleted or the id is wrong.
+          </p>
+          <a href="/" className="mt-6 inline-block font-mono text-xs text-muted-foreground hover:text-foreground transition-colors">
+            ← back to home
+          </a>
+        </main>
+      </>
+    );
+
+  if (!data || !data.repo)
     return (
       <>
         <BackgroundMesh />

@@ -49,10 +49,12 @@ export default function DiscrepancyPage({
   useEffect(() => {
     fetch(`/api/discrepancies/${verifId}`)
       .then((r) => r.json())
-      .then(setData);
+      .then((json) => {
+        if (json?.verification) setData(json);
+      });
   }, [verifId]);
 
-  if (!data)
+  if (!data || !data.verification)
     return (
       <>
         <BackgroundMesh />
