@@ -9,6 +9,7 @@ import { KpiCard } from "@/components/kpi-card";
 import { VerdictBadge, SeverityBadge } from "@/components/verdict-badge";
 import { VerdictBar } from "@/components/verdict-bar";
 import { LiveDot } from "@/components/live-dot";
+import { Explainer } from "@/components/explainer";
 
 type Verification = {
   id: string;
@@ -162,6 +163,22 @@ export default function RepoPage({ params }: { params: Promise<{ id: string }> }
 
         {isDone && repo.kpis && (
           <>
+            <Explainer
+              title={`We checked ${verifications.length} claims your docs make. ${counts.contradicted ?? 0} of them disagree with your code.`}
+              body={
+                <>
+                  Click any <span className="text-red-300 font-medium">contradicted</span> claim
+                  to see the evidence — what the doc said, what the code actually does, the agent
+                  trace, and a one-click doc patch you can paste into a PR.{" "}
+                  <span className="text-muted-foreground/70">
+                    Nothing in your repo has been modified. TruthGap is read-only.
+                  </span>
+                </>
+              }
+              variant="emerald"
+              className="fade-up"
+            />
+
             {/* KPIs */}
             <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 fade-up fade-up-1">
               <KpiCard
@@ -170,7 +187,13 @@ export default function RepoPage({ params }: { params: Promise<{ id: string }> }
                 numeric={repo.kpis.doc_health_score * 100}
                 format={(n) => n.toFixed(0)}
                 suffix="%"
-                hint={`${counts.supported ?? 0} supported / ${verifications.length} claims`}
+                hint={`${counts.supported ?? 0} of ${verifications.length} claims match the code`}
+                tooltip={
+                  <span>
+                    The percentage of investigated claims that the code agrees with.
+                    Higher is better. Computed as <span className="font-mono">supported / (supported + contradicted + partial)</span>.
+                  </span>
+                }
                 tone={
                   repo.kpis.doc_health_score > 0.85
                     ? "good"
@@ -187,10 +210,11 @@ export default function RepoPage({ params }: { params: Promise<{ id: string }> }
                 }
               />
               <KpiCard
-                label="Drift Velocity"
+                label="Drifts Found"
                 value={String(repo.kpis.drift_velocity)}
                 numeric={repo.kpis.drift_velocity}
-                hint="contradictions found"
+                hint="doc sentences that lie about the code"
+                tooltip="Number of claims the agents confidently flagged as contradicted by the actual code. Each one has a suggested patch."
                 tone={
                   repo.kpis.drift_velocity === 0
                     ? "good"
@@ -207,32 +231,36 @@ export default function RepoPage({ params }: { params: Promise<{ id: string }> }
                 }
               />
               <KpiCard
-                label="Cost / repo"
+                label="Cost"
                 value={`$${(repo.kpis.cost_cents / 100).toFixed(3)}`}
                 numeric={repo.kpis.cost_cents / 100}
                 format={(n) => `$${n.toFixed(3)}`}
-                hint="LLM tokens · prompt caching on"
+                hint="total Claude spend for this run"
+                tooltip="Sum of input + output tokens × model price across every Claude call (extraction, 3-agent verify, consolidator, patcher). Prompt caching is on."
                 accent="blue"
               />
               <KpiCard
-                label="Latency"
+                label="Compute Time"
                 value={`${(repo.kpis.total_latency_ms / 1000).toFixed(1)}s`}
                 numeric={repo.kpis.total_latency_ms / 1000}
                 format={(n) => `${n.toFixed(1)}`}
                 suffix="s"
-                hint="agent compute"
+                hint="time agents spent on Claude calls"
+                tooltip="Sum of every agent's API call duration. Rate-limit throttling adds wait time on top — the wall-clock pipeline run is longer."
                 accent="violet"
               />
             </section>
 
             {/* Verdict bar */}
             <section className="rounded-xl border border-border/60 bg-gradient-to-b from-card/70 to-card/30 backdrop-blur p-5 fade-up fade-up-2">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
                 <div>
-                  <div className="mono-pill">distribution</div>
-                  <h3 className="mt-2 text-sm font-medium">Verdict distribution</h3>
+                  <h3 className="text-sm font-medium">How each claim was judged</h3>
+                  <p className="mt-0.5 text-[11.5px] text-muted-foreground/80">
+                    Every claim is investigated by 3 agents and given one of four verdicts.
+                  </p>
                 </div>
-                <span className="text-[11px] font-mono text-muted-foreground/70 tabular-nums">
+                <span className="text-[11px] font-mono text-muted-foreground/70 tabular-nums shrink-0">
                   {verifications.length} verified claims
                 </span>
               </div>
@@ -243,8 +271,10 @@ export default function RepoPage({ params }: { params: Promise<{ id: string }> }
             <section className="space-y-3 fade-up fade-up-3">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div>
-                  <div className="mono-pill">claims</div>
-                  <h3 className="mt-2 text-sm font-medium">All verified claims</h3>
+                  <h3 className="text-sm font-medium">Every claim, individually</h3>
+                  <p className="mt-0.5 text-[11.5px] text-muted-foreground/80">
+                    Click any row to open the case file with full evidence and a suggested patch.
+                  </p>
                 </div>
                 <div className="flex gap-1 text-xs">
                   {(["all", "contradicted", "partial", "unverifiable", "supported"] as const).map(
@@ -319,10 +349,13 @@ export default function RepoPage({ params }: { params: Promise<{ id: string }> }
             {repo.kpis.friction_surface.length > 0 && (
               <section className="space-y-3 fade-up fade-up-4">
                 <div>
-                  <div className="mono-pill">friction surface</div>
-                  <h3 className="mt-2 text-sm font-medium">
-                    Doc sections most at risk
+                  <h3 className="text-sm font-medium flex items-center gap-2">
+                    Where the bugs cluster
                   </h3>
+                  <p className="mt-0.5 text-[11.5px] text-muted-foreground/80">
+                    Doc sections sorted by % of claims that disagree with the code. Higher bars
+                    = more drift in that section.
+                  </p>
                 </div>
                 <div className="rounded-xl border border-border/60 divide-y divide-border/40 overflow-hidden bg-card/30 backdrop-blur">
                   {repo.kpis.friction_surface.map((f) => (

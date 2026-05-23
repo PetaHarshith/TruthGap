@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Counter } from "./counter";
+import { InfoTooltip } from "./info-tooltip";
 
 type Tone = "default" | "good" | "warn" | "bad";
 
@@ -14,6 +15,7 @@ export function KpiCard({
   format,
   suffix,
   accent,
+  tooltip,
   className,
 }: {
   label: string;
@@ -25,6 +27,7 @@ export function KpiCard({
   format?: (n: number) => string;
   suffix?: string;
   accent?: "blue" | "green" | "amber" | "red" | "violet";
+  tooltip?: React.ReactNode;
   className?: string;
 }) {
   const toneCls = {
@@ -51,9 +54,12 @@ export function KpiCard({
         className,
       )}
     >
-      <div className="flex items-center justify-between">
-        <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground/80 font-mono">
-          {label}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground/80 font-mono">
+            {label}
+          </span>
+          {tooltip && <InfoTooltip text={tooltip} />}
         </div>
         {accent && (
           <span

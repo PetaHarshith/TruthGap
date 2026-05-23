@@ -7,6 +7,7 @@ import { BackgroundMesh } from "@/components/bg-mesh";
 import { VerdictBadge, SeverityBadge } from "@/components/verdict-badge";
 import { AgentTrace } from "@/components/agent-trace";
 import { DiffView } from "@/components/diff-view";
+import { Explainer } from "@/components/explainer";
 
 type Detail = {
   verification: {
@@ -71,6 +72,8 @@ export default function DiscrepancyPage({
     ([k, vs]) => (vs ?? []).map((v) => ({ k, v })),
   );
 
+  const isContradicted = verification.verdict === "contradicted";
+
   return (
     <>
       <BackgroundMesh />
@@ -87,7 +90,7 @@ export default function DiscrepancyPage({
           <div className="mt-4 flex items-start justify-between gap-6 flex-wrap">
             <div className="max-w-3xl">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="mono-pill">claim</span>
+                <span className="mono-pill">case file</span>
                 <span className="mono-pill">{verification.claim_type}</span>
                 <span className="text-[10px] font-mono text-muted-foreground/60 tabular-nums">
                   {verifId.slice(0, 8)}
@@ -136,13 +139,41 @@ export default function DiscrepancyPage({
               className="mt-0.5 mono-pill shrink-0"
               style={{ color: "oklch(0.7 0.18 162)", borderColor: "oklch(0.7 0.18 162 / 0.4)" }}
             >
-              consolidator
+              verdict
             </span>
             <p className="text-[13.5px] text-foreground/95 leading-relaxed">
               {verification.reasoning}
             </p>
           </div>
         </div>
+
+        <Explainer
+          title={
+            isContradicted
+              ? "What you're looking at: a documentation bug TruthGap found."
+              : "What you're looking at: a case file for an investigated claim."
+          }
+          body={
+            <>
+              Three specialist agents investigated this claim independently — the{" "}
+              <span style={{ color: "oklch(0.6 0.22 250)" }}>Code Agent</span> read the source,
+              the <span style={{ color: "oklch(0.65 0.22 303)" }}>History Agent</span> checked
+              git history, the <span style={{ color: "oklch(0.7 0.18 162)" }}>Web Agent</span>{" "}
+              searched scraped dep CHANGELOGs. The Consolidator merged their votes into the
+              verdict above.{" "}
+              {isContradicted && (
+                <>
+                  <span className="text-muted-foreground/70">
+                    The suggested patch at the bottom is a proposal — nothing has been changed
+                    in your repo.
+                  </span>
+                </>
+              )}
+            </>
+          }
+          variant={isContradicted ? "amber" : "default"}
+          className="fade-up"
+        />
 
         <div className="grid lg:grid-cols-2 gap-4 fade-up fade-up-1">
           <section className="space-y-2">
@@ -191,13 +222,16 @@ export default function DiscrepancyPage({
         </div>
 
         <section className="space-y-2 fade-up fade-up-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-end justify-between gap-3 flex-wrap">
             <div>
-              <div className="mono-pill">agent trace</div>
-              <h2 className="mt-2 text-sm font-medium">Three specialists voting on truth</h2>
+              <h2 className="text-sm font-medium">How each agent investigated</h2>
+              <p className="mt-0.5 text-[11.5px] text-muted-foreground/80">
+                Switch tabs to see each agent's tools, evidence, and verdict. Expand a tool call
+                to inspect the raw input and output.
+              </p>
             </div>
-            <span className="text-[10px] font-mono text-muted-foreground/60 tracking-[0.05em]">
-              expand any tool call to inspect inputs and outputs
+            <span className="text-[10px] font-mono text-muted-foreground/60 tracking-[0.05em] shrink-0">
+              full replay of every decision
             </span>
           </div>
           <AgentTrace agents={agents} />
@@ -205,10 +239,18 @@ export default function DiscrepancyPage({
 
         {verification.patch && (
           <section className="space-y-2 fade-up fade-up-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-end justify-between gap-3 flex-wrap">
               <div>
-                <div className="mono-pill">suggested patch</div>
-                <h2 className="mt-2 text-sm font-medium">Generated doc fix as a unified diff</h2>
+                <h2 className="text-sm font-medium flex items-center gap-2">
+                  Proposed fix
+                  <span className="mono-pill text-amber-300 border-amber-500/30">
+                    not applied
+                  </span>
+                </h2>
+                <p className="mt-0.5 text-[11.5px] text-muted-foreground/80">
+                  TruthGap is read-only — your repo wasn't modified. Copy this diff and apply it
+                  in a pull request.
+                </p>
               </div>
             </div>
             <DiffView patch={verification.patch} />
