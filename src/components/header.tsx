@@ -15,7 +15,6 @@ export function Header() {
         </Link>
         <nav className="ml-auto flex items-center gap-1 text-xs font-mono">
           <NavLink href="/">analyze</NavLink>
-          <NavLink href="/eval">eval</NavLink>
           <span className="mx-2 h-3 w-px bg-border" />
           <span className="flex items-center gap-1.5 text-muted-foreground px-3">
             <LiveDot color="emerald" />
