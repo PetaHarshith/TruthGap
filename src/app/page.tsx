@@ -20,7 +20,7 @@ type RepoRow = {
 };
 
 const SAMPLES = [
-  { label: "tinyshop (benchmark)", url: "file:///Users/harshithpeta/developer/truthgap/benchmark/sample" },
+  { label: "pallets/click", url: "https://github.com/pallets/click" },
   { label: "psf/requests", url: "https://github.com/psf/requests" },
   { label: "tiangolo/fastapi", url: "https://github.com/tiangolo/fastapi" },
 ];
@@ -38,15 +38,14 @@ export default function HomePage() {
       .then((d) => setRepos(d.repos ?? []));
   }, []);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function startAnalyze(payload: { url?: string; benchmark?: string }) {
     setError(null);
     setSubmitting(true);
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "failed");
@@ -55,6 +54,11 @@ export default function HomePage() {
       setError((err as Error).message);
       setSubmitting(false);
     }
+  }
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await startAnalyze({ url });
   }
 
   return (
@@ -117,9 +121,41 @@ export default function HomePage() {
             <div className="mt-3 text-xs font-mono text-red-300 max-w-2xl">{error}</div>
           )}
 
+          {/* Sample / benchmark CTA — runs locally, no GitHub URL needed */}
+          <div className="mt-5 fade-up fade-up-3">
+            <button
+              type="button"
+              onClick={() => startAnalyze({ benchmark: "tinyshop" })}
+              disabled={submitting}
+              className="group w-full max-w-2xl flex items-center justify-between gap-3 rounded-xl border border-dashed border-border bg-gradient-to-r from-card/60 to-card/30 hover:from-card/80 hover:to-card/50 hover:border-emerald-500/40 transition-all px-4 py-3 text-left"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="shrink-0 w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
+                  <svg viewBox="0 0 16 16" className="w-4 h-4 text-emerald-300" aria-hidden>
+                    <path d="M4 8l3 3 5-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  </svg>
+                </span>
+                <div className="min-w-0">
+                  <div className="text-[13px] font-medium flex items-center gap-2 flex-wrap">
+                    Try the seeded benchmark
+                    <span className="mono-pill" style={{ color: "oklch(0.7 0.18 162)", borderColor: "oklch(0.7 0.18 162 / 0.3)" }}>
+                      tinyshop · 22 drifts
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground/80 mt-0.5">
+                    Small Python project with 22 intentional documentation bugs. Runs in ~8 minutes, ~$0.30. Best way to see the full pipeline.
+                  </div>
+                </div>
+              </div>
+              <span className="text-muted-foreground group-hover:text-foreground transition-colors text-sm font-mono shrink-0">
+                run →
+              </span>
+            </button>
+          </div>
+
           <div className="mt-4 flex flex-wrap items-center gap-1.5 fade-up fade-up-3">
             <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-muted-foreground/60 mr-1">
-              try
+              or paste a real repo
             </span>
             {SAMPLES.map((s) => (
               <button
