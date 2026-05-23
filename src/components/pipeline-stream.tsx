@@ -193,8 +193,12 @@ export function PipelineStream({ repoId, onDone }: { repoId: string; onDone?: ()
             <span style={{ background: "oklch(0.7 0.19 22)" }} />
             <span style={{ background: "oklch(0.78 0.18 70)" }} />
             <span style={{ background: "oklch(0.7 0.18 162)" }} />
-            <span className="ml-3 text-[11px] text-muted-foreground/70 font-mono tracking-[0.05em]">
-              truthgap pipeline · {events.length} events · {elapsed}s
+            <span className="terminal-bar-text ml-3 text-[11px] text-muted-foreground/70 font-mono tracking-[0.05em] flex-1">
+              <span className="text-foreground/80">truthgap</span> pipeline
+              <span className="text-muted-foreground/40"> · </span>
+              {events.length} events
+              <span className="text-muted-foreground/40"> · </span>
+              <span className="tabular-nums">{elapsed}s</span>
             </span>
           </div>
           <div

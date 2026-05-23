@@ -266,11 +266,22 @@
   gap: 6px;
   padding: 8px 12px;
   border-bottom: 1px solid oklch(1 0 0 / 0.06);
+  white-space: nowrap;
+  overflow: hidden;
+  flex-shrink: 0;
+  min-height: 36px;
 }
-.terminal-bar > span {
+.terminal-bar > span:not(.terminal-bar-text) {
   width: 10px;
   height: 10px;
   border-radius: 999px;
+  flex-shrink: 0;
+}
+.terminal-bar-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ---------- spinner ---------- */

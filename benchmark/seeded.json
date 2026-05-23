@@ -1,90 +1,160 @@
 {
-  "benchmark": "tinyshop@seeded-v1",
-  "description": "Intentional documentation drifts seeded into a tiny FastAPI/Click project.",
+  "benchmark": "tinyshop@seeded-v2",
+  "description": "Tinyshop benchmark v2 — a more substantial Python project with 15 intentional, categorized documentation drifts plus a handful of correct claims.",
   "expected_drifts": [
     {
       "id": "install_extras",
-      "summary": "README claims `pip install tinyshop[all]` but pyproject defines no [all] extra.",
+      "summary": "README says `pip install tinyshop[all]` — no [all] extra exists; only [dev] is defined.",
       "match_any": ["tinyshop[all]", "[all]"],
-      "type": "install_command"
+      "type": "install_command",
+      "where": "README.md · Install"
     },
     {
       "id": "python_version",
-      "summary": "README says Python 3.10+ but no minimum is set in pyproject.",
+      "summary": "README says Python 3.10+, pyproject pins >=3.11.",
       "match_any": ["3.10+", "Python 3.10"],
-      "type": "version"
+      "type": "version",
+      "where": "README.md · Install"
     },
     {
       "id": "fastapi_version",
-      "summary": "README says FastAPI 0.105 but pyproject pins >=0.110.0.",
-      "match_any": ["0.105", "FastAPI 0.105"],
-      "type": "dependency"
+      "summary": "README says FastAPI 0.105, pyproject pins >=0.115.0.",
+      "match_any": ["FastAPI 0.105", "0.105"],
+      "type": "dependency",
+      "where": "README.md · Install"
     },
     {
       "id": "pydantic_version",
-      "summary": "README says Pydantic 1.x but pyproject pins >=2.5.0.",
+      "summary": "README says Pydantic 1.x, pyproject pins >=2.7.0.",
       "match_any": ["Pydantic 1", "pydantic 1"],
-      "type": "dependency"
+      "type": "dependency",
+      "where": "README.md · Install"
     },
     {
-      "id": "create_product_status",
-      "summary": "README says POST /products returns 200 — handler does not set status; default is 200 but on conflict raises 409, which README doesn't mention.",
-      "match_any": ["Returns 200 on success", "200 on success"],
-      "type": "api_endpoint"
-    },
-    {
-      "id": "cart_capacity",
-      "summary": "README says carts hold up to 50 — code has MAX_CART_ITEMS = 25.",
-      "match_any": ["up to 50", "50"],
-      "type": "behavior"
-    },
-    {
-      "id": "cart_total_unit",
-      "summary": "README says cart total is in dollars — handler returns cents.",
-      "match_any": ["in dollars"],
-      "type": "behavior"
-    },
-    {
-      "id": "default_currency",
-      "summary": "README says default currency is EUR — code DEFAULT_CURRENCY = 'USD'.",
-      "match_any": ["EUR"],
-      "type": "default_value"
+      "id": "server_port",
+      "summary": "README says default port 8080; config says 8000.",
+      "match_any": ["port 8080", "8080"],
+      "type": "default_value",
+      "where": "README.md · Quick start"
     },
     {
       "id": "price_unit_cli",
-      "summary": "CLI README says --price is in dollars — code says price_cents int.",
-      "match_any": ["--price is in dollars", "in dollars"],
-      "type": "cli_flag"
+      "summary": "README says `--price` is in dollars; CLI option is in CENTS.",
+      "match_any": ["--price is in **dollars**", "in **dollars**"],
+      "type": "cli_flag",
+      "where": "README.md · CLI"
     },
     {
-      "id": "list_products_default",
-      "summary": "README says --limit defaults to 100 — code default is 50.",
+      "id": "list_products_limit",
+      "summary": "README says --limit defaults to 100; CLI default is 50.",
       "match_any": ["defaults to **100**", "100 if omitted"],
-      "type": "default_value"
+      "type": "default_value",
+      "where": "README.md · CLI"
+    },
+    {
+      "id": "stock_default",
+      "summary": "docs/cli.md says --stock default is 10; CLI default is 0.",
+      "match_any": ["10      | Initial stock", "default 10"],
+      "type": "default_value",
+      "where": "docs/cli.md"
     },
     {
       "id": "tax_rate",
-      "summary": "README says tax rate is 9% — code uses 8.25%.",
+      "summary": "README says tax rate is 9%; config says 8.25%.",
       "match_any": ["9%"],
-      "type": "config_option"
+      "type": "config_option",
+      "where": "README.md · Pricing"
     },
     {
-      "id": "shipping_flat_fee",
-      "summary": "README says shipping is flat $4.99 — code is 599 cents = $5.99.",
+      "id": "shipping_fee",
+      "summary": "README says shipping is $4.99; code is 599 cents = $5.99.",
       "match_any": ["$4.99", "4.99"],
-      "type": "default_value"
+      "type": "default_value",
+      "where": "README.md · Pricing"
     },
     {
       "id": "free_shipping_threshold",
-      "summary": "README says free shipping above $100 — code uses 5000 cents = $50.",
+      "summary": "README says free shipping above $100; code threshold is $50 (5000 cents).",
       "match_any": ["at least **$100**", "$100"],
-      "type": "default_value"
+      "type": "default_value",
+      "where": "README.md · Pricing"
+    },
+    {
+      "id": "discount_code",
+      "summary": "README lists SAVE15 as a discount code; code defines SAVE20 instead.",
+      "match_any": ["SAVE15"],
+      "type": "behavior",
+      "where": "README.md · Pricing"
+    },
+    {
+      "id": "token_ttl",
+      "summary": "README says tokens valid for 24 hours; config token_ttl_seconds = 3600 (1 hour).",
+      "match_any": ["24 hours"],
+      "type": "behavior",
+      "where": "README.md · Authentication"
+    },
+    {
+      "id": "default_currency",
+      "summary": "README says default currency is EUR; config says USD.",
+      "match_any": ["`EUR`", "EUR"],
+      "type": "default_value",
+      "where": "README.md · Configuration"
+    },
+    {
+      "id": "cart_capacity",
+      "summary": "README says max_cart_items default is 50; config says 25.",
+      "match_any": ["`50`", "up to **50**", "hold up to **50**"],
+      "type": "default_value",
+      "where": "README.md · Configuration / docs/api.md"
+    },
+    {
+      "id": "rate_limit",
+      "summary": "README says rate_limit_per_minute default is 100; config says 60.",
+      "match_any": ["`100`"],
+      "type": "config_option",
+      "where": "README.md · Configuration"
     },
     {
       "id": "version_drift",
-      "summary": "README says document tracks 0.3.1 — code is 0.4.2.",
-      "match_any": ["0.3.1"],
-      "type": "version"
+      "summary": "README footer says document tracks 0.5.1; package version is 0.6.0.",
+      "match_any": ["0.5.1"],
+      "type": "version",
+      "where": "README.md · Version"
+    },
+    {
+      "id": "post_products_status",
+      "summary": "docs/api.md says POST /products returns 200; handler decorator sets status_code=201.",
+      "match_any": ["Returns **200** on success", "200 on success"],
+      "type": "api_endpoint",
+      "where": "docs/api.md"
+    },
+    {
+      "id": "list_products_api_default",
+      "summary": "docs/api.md says GET /products limit defaults to 100; handler default is 50.",
+      "match_any": ["defaults to **100**.", "limit defaults to **100**"],
+      "type": "default_value",
+      "where": "docs/api.md"
+    },
+    {
+      "id": "inventory_method",
+      "summary": "docs/api.md says PUT /inventory/{sku}/adjust; handler is decorated with @app.post.",
+      "match_any": ["PUT    | `/inventory"],
+      "type": "api_endpoint",
+      "where": "docs/api.md"
+    },
+    {
+      "id": "cart_total_unit",
+      "summary": "docs/api.md says cart total is in dollars; handler returns cents.",
+      "match_any": ["Total in **dollars**", "in **dollars**"],
+      "type": "behavior",
+      "where": "docs/api.md"
+    },
+    {
+      "id": "auth_failure_status",
+      "summary": "docs/api.md says missing tokens return 403; handler raises 401.",
+      "match_any": ["return **403**", "403"],
+      "type": "api_endpoint",
+      "where": "docs/api.md"
     }
   ]
 }
