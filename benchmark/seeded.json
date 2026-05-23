@@ -1,0 +1,90 @@
+{
+  "benchmark": "tinyshop@seeded-v1",
+  "description": "Intentional documentation drifts seeded into a tiny FastAPI/Click project.",
+  "expected_drifts": [
+    {
+      "id": "install_extras",
+      "summary": "README claims `pip install tinyshop[all]` but pyproject defines no [all] extra.",
+      "match_any": ["tinyshop[all]", "[all]"],
+      "type": "install_command"
+    },
+    {
+      "id": "python_version",
+      "summary": "README says Python 3.10+ but no minimum is set in pyproject.",
+      "match_any": ["3.10+", "Python 3.10"],
+      "type": "version"
+    },
+    {
+      "id": "fastapi_version",
+      "summary": "README says FastAPI 0.105 but pyproject pins >=0.110.0.",
+      "match_any": ["0.105", "FastAPI 0.105"],
+      "type": "dependency"
+    },
+    {
+      "id": "pydantic_version",
+      "summary": "README says Pydantic 1.x but pyproject pins >=2.5.0.",
+      "match_any": ["Pydantic 1", "pydantic 1"],
+      "type": "dependency"
+    },
+    {
+      "id": "create_product_status",
+      "summary": "README says POST /products returns 200 — handler does not set status; default is 200 but on conflict raises 409, which README doesn't mention.",
+      "match_any": ["Returns 200 on success", "200 on success"],
+      "type": "api_endpoint"
+    },
+    {
+      "id": "cart_capacity",
+      "summary": "README says carts hold up to 50 — code has MAX_CART_ITEMS = 25.",
+      "match_any": ["up to 50", "50"],
+      "type": "behavior"
+    },
+    {
+      "id": "cart_total_unit",
+      "summary": "README says cart total is in dollars — handler returns cents.",
+      "match_any": ["in dollars"],
+      "type": "behavior"
+    },
+    {
+      "id": "default_currency",
+      "summary": "README says default currency is EUR — code DEFAULT_CURRENCY = 'USD'.",
+      "match_any": ["EUR"],
+      "type": "default_value"
+    },
+    {
+      "id": "price_unit_cli",
+      "summary": "CLI README says --price is in dollars — code says price_cents int.",
+      "match_any": ["--price is in dollars", "in dollars"],
+      "type": "cli_flag"
+    },
+    {
+      "id": "list_products_default",
+      "summary": "README says --limit defaults to 100 — code default is 50.",
+      "match_any": ["defaults to **100**", "100 if omitted"],
+      "type": "default_value"
+    },
+    {
+      "id": "tax_rate",
+      "summary": "README says tax rate is 9% — code uses 8.25%.",
+      "match_any": ["9%"],
+      "type": "config_option"
+    },
+    {
+      "id": "shipping_flat_fee",
+      "summary": "README says shipping is flat $4.99 — code is 599 cents = $5.99.",
+      "match_any": ["$4.99", "4.99"],
+      "type": "default_value"
+    },
+    {
+      "id": "free_shipping_threshold",
+      "summary": "README says free shipping above $100 — code uses 5000 cents = $50.",
+      "match_any": ["at least **$100**", "$100"],
+      "type": "default_value"
+    },
+    {
+      "id": "version_drift",
+      "summary": "README says document tracks 0.3.1 — code is 0.4.2.",
+      "match_any": ["0.3.1"],
+      "type": "version"
+    }
+  ]
+}
