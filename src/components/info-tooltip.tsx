@@ -10,26 +10,54 @@ import {
 export function InfoTooltip({
   children,
   text,
+  side = "bottom",
 }: {
   children?: React.ReactNode;
   text: React.ReactNode;
+  side?: "top" | "bottom" | "left" | "right";
 }) {
   return (
     <TooltipProvider delayDuration={120}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="inline-flex cursor-help">
+          <button
+            type="button"
+            className="group inline-flex items-center justify-center w-4 h-4 rounded-full text-muted-foreground/60 hover:text-foreground hover:bg-muted/50 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-ring align-middle"
+            aria-label="More info"
+          >
             {children ?? (
-              <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full border border-border/60 text-[8px] font-mono text-muted-foreground hover:text-foreground hover:border-border transition-colors">
-                ?
-              </span>
+              <svg
+                viewBox="0 0 16 16"
+                width="11"
+                height="11"
+                fill="none"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="8"
+                  cy="8"
+                  r="6.25"
+                  stroke="currentColor"
+                  strokeWidth="1.25"
+                  className="opacity-70 group-hover:opacity-100 transition-opacity"
+                />
+                <path
+                  d="M6.6 6.2c.1-.9.8-1.6 1.6-1.6.9 0 1.6.7 1.6 1.5 0 .9-.7 1.3-1.3 1.7-.4.3-.5.5-.5 1"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                />
+                <circle cx="8" cy="11.5" r="0.65" fill="currentColor" />
+              </svg>
             )}
-          </span>
+          </button>
         </TooltipTrigger>
         <TooltipContent
-          side="top"
+          side={side}
           align="start"
-          className="max-w-xs bg-card border-border/60 text-foreground/95 text-[12px] leading-relaxed font-normal"
+          sideOffset={6}
+          collisionPadding={12}
+          className="max-w-[280px] bg-popover border border-border/80 text-foreground text-[12.5px] leading-relaxed font-normal px-3 py-2 shadow-xl shadow-black/40"
         >
           {text}
         </TooltipContent>
