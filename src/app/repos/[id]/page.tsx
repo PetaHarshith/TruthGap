@@ -124,20 +124,20 @@ export default function RepoPage({ params }: { params: Promise<{ id: string }> }
                 {id.slice(0, 8)}
               </span>
             </div>
-            <h1 className="mt-2 text-3xl font-medium font-mono tracking-tight">{repo.name}</h1>
-            <div className="mt-1.5 text-xs text-muted-foreground/70 font-mono flex items-center gap-2 flex-wrap">
+            <h1 className="mt-3 text-3xl font-medium tracking-tight h-grad">{repo.name}</h1>
+            <div className="mt-2 text-[12.5px] text-muted-foreground/80 flex items-center gap-2 flex-wrap">
               <a
                 href={repo.url.startsWith("file:") ? "#" : repo.url}
                 target="_blank"
                 rel="noreferrer"
-                className="hover:text-foreground transition-colors truncate max-w-[400px]"
+                className="hover:text-foreground transition-colors truncate max-w-[400px] font-mono text-[11.5px]"
               >
                 {repo.url.replace(/^https?:\/\//, "")}
               </a>
               {repo.commit_sha && (
                 <>
                   <span className="text-muted-foreground/40">·</span>
-                  <span>@ {repo.commit_sha.slice(0, 7)}</span>
+                  <span className="font-mono text-[11.5px]">@ {repo.commit_sha.slice(0, 7)}</span>
                 </>
               )}
             </div>
@@ -252,16 +252,17 @@ export default function RepoPage({ params }: { params: Promise<{ id: string }> }
             </section>
 
             {/* Verdict bar */}
-            <section className="rounded-xl border border-border/60 bg-gradient-to-b from-card/70 to-card/30 backdrop-blur p-5 fade-up fade-up-2">
-              <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+            <section className="rounded-2xl border border-border/50 bg-gradient-to-b from-card/80 to-card/40 backdrop-blur p-6 fade-up fade-up-2">
+              <div className="flex items-end justify-between mb-5 gap-3 flex-wrap">
                 <div>
-                  <h3 className="text-sm font-medium">How each claim was judged</h3>
-                  <p className="mt-0.5 text-[11.5px] text-muted-foreground/80">
-                    Every claim is investigated by 3 agents and given one of four verdicts.
+                  <h3 className="text-base font-medium">How each claim was judged</h3>
+                  <p className="mt-1 text-[12.5px] text-muted-foreground leading-relaxed">
+                    Every claim is investigated by three independent agents and given one of four verdicts.
                   </p>
                 </div>
-                <span className="text-[11px] font-mono text-muted-foreground/70 tabular-nums shrink-0">
-                  {verifications.length} verified claims
+                <span className="text-[12px] text-muted-foreground tabular-nums shrink-0">
+                  <span className="text-foreground/90 text-base font-medium">{verifications.length}</span>{" "}
+                  verified claims
                 </span>
               </div>
               <VerdictBar counts={counts} />

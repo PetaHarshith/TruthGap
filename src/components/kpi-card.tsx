@@ -6,6 +6,14 @@ import { InfoTooltip } from "./info-tooltip";
 
 type Tone = "default" | "good" | "warn" | "bad";
 
+const ACCENT_COLORS: Record<string, string> = {
+  blue: "oklch(0.62 0.22 250)",
+  green: "oklch(0.72 0.18 162)",
+  amber: "oklch(0.78 0.18 70)",
+  red: "oklch(0.7 0.19 22)",
+  violet: "oklch(0.66 0.22 303)",
+};
+
 export function KpiCard({
   label,
   value,
@@ -22,7 +30,6 @@ export function KpiCard({
   value: string;
   hint?: string;
   tone?: Tone;
-  /** if provided, animates count-up to this number instead of rendering `value` */
   numeric?: number;
   format?: (n: number) => string;
   suffix?: string;
@@ -37,53 +44,68 @@ export function KpiCard({
     bad: "text-red-300",
   }[tone];
 
-  const accentGlow: Record<string, string> = {
-    blue: "before:bg-[radial-gradient(420px_circle_at_0%_0%,oklch(0.6_0.22_250/0.10),transparent_40%)]",
-    green: "before:bg-[radial-gradient(420px_circle_at_0%_0%,oklch(0.7_0.18_162/0.10),transparent_40%)]",
-    amber: "before:bg-[radial-gradient(420px_circle_at_0%_0%,oklch(0.78_0.18_70/0.10),transparent_40%)]",
-    red: "before:bg-[radial-gradient(420px_circle_at_0%_0%,oklch(0.7_0.19_22/0.10),transparent_40%)]",
-    violet: "before:bg-[radial-gradient(420px_circle_at_0%_0%,oklch(0.65_0.22_303/0.10),transparent_40%)]",
-  };
+  const accentColor = accent ? ACCENT_COLORS[accent] : undefined;
 
   return (
     <div
       className={cn(
-        "relative rounded-xl border border-border/60 px-5 py-4 overflow-hidden bg-gradient-to-b from-card/80 to-card/40 backdrop-blur",
-        "before:content-[''] before:absolute before:inset-0 before:pointer-events-none",
-        accent && accentGlow[accent],
+        "group relative rounded-2xl border border-border/50 px-5 py-5 overflow-hidden",
+        "bg-gradient-to-b from-card/90 to-card/50 backdrop-blur transition-all",
+        "hover:border-border hover:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.5)]",
         className,
       )}
     >
-      <div className="flex items-center justify-between gap-2">
+      {/* accent glow in top-left */}
+      {accentColor && (
+        <span
+          className="absolute -top-12 -left-12 w-40 h-40 rounded-full opacity-60 pointer-events-none"
+          style={{
+            background: `radial-gradient(circle, ${accentColor}30, transparent 70%)`,
+            filter: "blur(20px)",
+          }}
+          aria-hidden
+        />
+      )}
+
+      {/* top accent line */}
+      {accentColor && (
+        <span
+          className="absolute top-0 left-5 right-5 h-px"
+          style={{
+            background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)`,
+          }}
+          aria-hidden
+        />
+      )}
+
+      <div className="relative flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground/80 font-mono">
+          <span className="text-[10.5px] uppercase tracking-[0.15em] text-muted-foreground/80 font-medium">
             {label}
           </span>
           {tooltip && <InfoTooltip text={tooltip} />}
         </div>
-        {accent && (
+        {accentColor && (
           <span
             className="w-1.5 h-1.5 rounded-full"
-            style={{
-              background: {
-                blue: "oklch(0.6 0.22 250)",
-                green: "oklch(0.7 0.18 162)",
-                amber: "oklch(0.78 0.18 70)",
-                red: "oklch(0.7 0.19 22)",
-                violet: "oklch(0.65 0.22 303)",
-              }[accent],
-            }}
+            style={{ background: accentColor }}
           />
         )}
       </div>
-      <div className={cn("mt-3 text-[32px] leading-none font-medium tabular-nums tracking-tight", toneCls)}>
+
+      <div className={cn("relative mt-4 kpi-num text-[40px] leading-[1] tabular-nums", toneCls)}>
         {numeric !== undefined ? (
           <Counter value={numeric} format={format} suffix={suffix} />
         ) : (
           value
         )}
       </div>
-      {hint && <div className="mt-2 text-[11px] text-muted-foreground/80 font-mono">{hint}</div>}
+
+      {hint && (
+        <div className="relative mt-2.5 text-[12px] text-muted-foreground/80 leading-snug">
+          {hint}
+        </div>
+      )}
     </div>
   );
 }
