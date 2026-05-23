@@ -5,7 +5,10 @@ let _client: Anthropic | null = null;
 
 export function anthropic() {
   if (!_client) {
-    _client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+    _client = new Anthropic({
+      apiKey: env.ANTHROPIC_API_KEY,
+      maxRetries: 8,
+    });
   }
   return _client;
 }

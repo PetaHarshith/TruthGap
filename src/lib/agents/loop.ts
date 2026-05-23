@@ -93,7 +93,7 @@ export async function runAgent(opts: {
   for (let iter = 0; iter < maxIter && !finalResult; iter++) {
     const res = await anthropic().messages.create({
       model: env.ANTHROPIC_MODEL,
-      max_tokens: 1500,
+      max_tokens: 1000,
       system: [
         { type: "text", text: opts.systemPrompt, cache_control: { type: "ephemeral" } },
       ],

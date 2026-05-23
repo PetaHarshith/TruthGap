@@ -2,7 +2,7 @@ import { cloneRepo } from "./clone";
 import { walkRepo, readFileSafe } from "./walk";
 import { chunkMarkdown } from "./markdown";
 import { parsePython, symbolToChunk } from "./python";
-import { embed } from "@/lib/llm/openai";
+import { embed } from "@/lib/llm/embed";
 import { sql } from "@/lib/db/client";
 import { emitEvent } from "@/lib/events";
 

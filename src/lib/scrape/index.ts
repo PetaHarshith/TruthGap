@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
 import { sql } from "@/lib/db/client";
-import { embed } from "@/lib/llm/openai";
+import { embed } from "@/lib/llm/embed";
 import { emitEvent } from "@/lib/events";
 import { readFileSafe } from "@/lib/ingest/walk";
 import path from "node:path";

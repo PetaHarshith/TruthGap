@@ -68,7 +68,7 @@ async function consolidate(claim: ClaimRow, agents: AgentResult[]): Promise<Cons
     .join("\n\n");
 
   const res = await anthropic().messages.create({
-    model: env.ANTHROPIC_MODEL,
+    model: env.ANTHROPIC_EXTRACTION_MODEL,
     max_tokens: 800,
     system: [
       {
@@ -135,11 +135,14 @@ export async function verifyClaims(repoId: string, repoDir: string): Promise<{ c
     FROM claims
     WHERE repo_id = ${repoId} AND status = 'pending'
     ORDER BY source_file
+    LIMIT 15
   `;
 
   const ctx: ToolContext = { repoId, repoDir };
   let contradicted = 0;
-  const CONCURRENCY = 2;
+  // Serial: 3 parallel agent calls per claim, but only one claim at a time.
+  // Anthropic tier-1 caps at 50 RPM / 30k input TPM — we MUST throttle.
+  const CONCURRENCY = 1;
 
   for (let i = 0; i < claims.length; i += CONCURRENCY) {
     const batch = claims.slice(i, i + CONCURRENCY);
@@ -154,7 +157,7 @@ export async function verifyClaims(repoId: string, repoDir: string): Promise<{ c
               userPrompt,
               tools: CODE_TOOLS,
               ctx,
-              maxIterations: 6,
+              maxIterations: 4,
             }),
             runAgent({
               agent: "history",
@@ -162,7 +165,7 @@ export async function verifyClaims(repoId: string, repoDir: string): Promise<{ c
               userPrompt,
               tools: HISTORY_TOOLS,
               ctx,
-              maxIterations: 4,
+              maxIterations: 3,
             }),
             runAgent({
               agent: "web",
@@ -170,7 +173,7 @@ export async function verifyClaims(repoId: string, repoDir: string): Promise<{ c
               userPrompt,
               tools: WEB_TOOLS,
               ctx,
-              maxIterations: 4,
+              maxIterations: 3,
             }),
           ]);
 
@@ -214,10 +217,12 @@ export async function verifyClaims(repoId: string, repoDir: string): Promise<{ c
 
           await sql()`UPDATE claims SET status = 'verified' WHERE id = ${claim.id}`;
         } catch (err) {
+          const e = err as Error;
+          console.error(`[verify] claim ${claim.id.slice(0, 8)} failed:`, e.message, "\n", e.stack?.split("\n").slice(0, 5).join("\n"));
           emitEvent(repoId, {
             stage: "verify",
             level: "warn",
-            message: `claim ${claim.id} failed: ${(err as Error).message}`,
+            message: `claim ${claim.id} failed: ${e.message}`,
           });
           await sql()`UPDATE claims SET status = 'errored' WHERE id = ${claim.id}`;
         }

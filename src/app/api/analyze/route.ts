@@ -9,10 +9,14 @@ export async function POST(req: NextRequest) {
   await ensureSchema();
   const body = await req.json().catch(() => ({}));
   const url = String(body.url ?? "").trim();
-  if (!/^https?:\/\/(www\.)?github\.com\/[^\/]+\/[^\/]+/.test(url)) {
-    return NextResponse.json({ error: "Provide a GitHub repo URL." }, { status: 400 });
+  const isGithub = /^https?:\/\/(www\.)?github\.com\/[^/]+\/[^/]+/.test(url);
+  const isFile = url.startsWith("file://");
+  if (!isGithub && !isFile) {
+    return NextResponse.json({ error: "Provide a GitHub repo URL or a file:// path." }, { status: 400 });
   }
-  const name = url.replace(/\.git$/, "").split("/").slice(-2).join("/");
+  const name = isFile
+    ? url.replace(/^file:\/\//, "").split("/").filter(Boolean).slice(-1)[0] + " (local)"
+    : url.replace(/\.git$/, "").split("/").slice(-2).join("/");
   const rows = await sql()<{ id: string }[]>`
     INSERT INTO repos (url, name, status, current_stage)
     VALUES (${url}, ${name}, 'pending', 'queued')

@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS chunks (
   kind        text NOT NULL,
   content     text NOT NULL,
   content_tsv tsvector GENERATED ALWAYS AS (to_tsvector('english', content)) STORED,
-  embedding   vector(1536),
+  embedding   vector(384),
   meta        jsonb NOT NULL DEFAULT '{}'::jsonb
 );
 CREATE INDEX IF NOT EXISTS chunks_repo_idx ON chunks(repo_id);

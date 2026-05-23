@@ -1,5 +1,5 @@
 import { sql } from "@/lib/db/client";
-import { embed } from "@/lib/llm/openai";
+import { embed } from "@/lib/llm/embed";
 
 export type SearchHit = {
   chunk_id: string;
