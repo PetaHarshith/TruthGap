@@ -120,8 +120,27 @@ Return JSON ONLY: {"verdict": "...", "confidence": 0.0-1.0, "severity": "low|med
     } catch {}
   }
 
-  // Merge evidence from all agents that voted similarly
-  const finalVerdict = parsed.verdict ?? "unverifiable";
+  // Coerce off-enum verdicts the consolidator sometimes hallucinates
+  // (Haiku occasionally returns "confirmed", "validated", "true", etc).
+  const ALLOWED: Verdict[] = ["supported", "contradicted", "unverifiable", "partial"];
+  const SYNONYMS: Record<string, Verdict> = {
+    confirmed: "supported",
+    validated: "supported",
+    correct: "supported",
+    true: "supported",
+    false: "contradicted",
+    incorrect: "contradicted",
+    wrong: "contradicted",
+    unknown: "unverifiable",
+    unclear: "unverifiable",
+    inconclusive: "unverifiable",
+    mixed: "partial",
+  };
+  const raw = (parsed.verdict ?? "unverifiable").toString().toLowerCase().trim() as string;
+  const finalVerdict: Verdict = ALLOWED.includes(raw as Verdict)
+    ? (raw as Verdict)
+    : (SYNONYMS[raw] ?? "unverifiable");
+
   const matchingAgents = agents.filter((a) => a.verdict === finalVerdict);
   const evidence = matchingAgents.flatMap((a) => a.evidence).slice(0, 6);
 
