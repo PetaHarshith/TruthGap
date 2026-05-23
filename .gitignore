@@ -41,8 +41,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# nested benchmark git metadata (re-initialized at eval runtime)
+# nested benchmark git metadata (created at eval runtime; do not track in parent)
 benchmark/sample/.git/
+benchmark/sample/_seed_git/
 
 # claude code local settings
 .claude/settings.local.json

@@ -1,4 +1,9 @@
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
+import path from "node:path";
+// Mirror Next.js precedence: .env.local overrides .env. Next picks this
+// up automatically; scripts/tools running raw node need explicit help.
+loadEnv({ path: path.join(process.cwd(), ".env.local") });
+loadEnv();
 
 function required(name: string): string {
   const v = process.env[name];

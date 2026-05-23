@@ -59,11 +59,15 @@ class TokenBucket {
 
 // Singleton buckets — survive HMR via globalThis
 const g = globalThis as unknown as { __truthgap_rpm__?: TokenBucket; __truthgap_tpm__?: TokenBucket };
-const RPM_LIMIT = 45; // tier-1 is 50; leave a small headroom
-const TPM_LIMIT = 28_000; // tier-1 is 30k; leave headroom
+// Aggressive headroom for the eval run. Anthropic measures on a rolling
+// 60-second window; a burst-empty bucket is fine but a burst-FULL bucket
+// can still trip the limit because we fire too fast in the first 10s.
+// Start the bucket small (10 tokens) and drain slowly.
+const RPM_LIMIT = 25; // half of tier-1 → no chance of bursts tripping
+const TPM_LIMIT = 18_000;
 
-if (!g.__truthgap_rpm__) g.__truthgap_rpm__ = new TokenBucket(RPM_LIMIT, RPM_LIMIT / 60);
-if (!g.__truthgap_tpm__) g.__truthgap_tpm__ = new TokenBucket(TPM_LIMIT, TPM_LIMIT / 60);
+if (!g.__truthgap_rpm__) g.__truthgap_rpm__ = new TokenBucket(10, RPM_LIMIT / 60);
+if (!g.__truthgap_tpm__) g.__truthgap_tpm__ = new TokenBucket(5_000, TPM_LIMIT / 60);
 
 const rpm = g.__truthgap_rpm__;
 const tpm = g.__truthgap_tpm__;

@@ -147,15 +147,15 @@ export async function verifyClaims(repoId: string, repoDir: string): Promise<{ c
     FROM claims
     WHERE repo_id = ${repoId} AND status = 'pending'
     ORDER BY source_file
-    LIMIT 15
+    LIMIT 50
   `;
 
   const ctx: ToolContext = { repoId, repoDir };
   let contradicted = 0;
-  // 2 claims in flight = 6 parallel agent calls peak. Safe because the
-  // rate-limit token bucket in src/lib/rate-limit.ts pre-throttles every
-  // Anthropic call to stay under tier-1 RPM/TPM.
-  const CONCURRENCY = 2;
+  // 1 claim at a time for the eval run = 3 parallel agent calls peak.
+  // Conservative on tier-1 — 3 parallel calls + token bucket means we
+  // never burst above the limit.
+  const CONCURRENCY = 1;
 
   for (let i = 0; i < claims.length; i += CONCURRENCY) {
     const batch = claims.slice(i, i + CONCURRENCY);

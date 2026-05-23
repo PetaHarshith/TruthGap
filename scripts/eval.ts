@@ -4,9 +4,13 @@
  *
  * Usage:  pnpm tsx scripts/eval.ts
  */
-import "dotenv/config";
-import { readFile, stat, rename } from "node:fs/promises";
+import { config as loadEnv } from "dotenv";
 import path from "node:path";
+// Load .env.local first (matches Next.js dev convention), .env as fallback.
+loadEnv({ path: path.join(process.cwd(), ".env.local") });
+loadEnv();
+
+import { readFile, stat, rename } from "node:fs/promises";
 import { simpleGit } from "simple-git";
 import { sql, ensureSchema } from "../src/lib/db/client";
 import { runPipeline } from "../src/lib/pipeline";
