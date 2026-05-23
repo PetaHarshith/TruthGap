@@ -188,12 +188,7 @@ export default function RepoPage({ params }: { params: Promise<{ id: string }> }
                 format={(n) => n.toFixed(0)}
                 suffix="%"
                 hint={`${counts.supported ?? 0} of ${verifications.length} claims match the code`}
-                tooltip={
-                  <span>
-                    The percentage of investigated claims that the code agrees with.
-                    Higher is better. Computed as <span className="font-mono">supported / (supported + contradicted + partial)</span>.
-                  </span>
-                }
+                tooltip="% of claims the code agrees with. Higher = better. supported / (supported + contradicted + partial)."
                 tone={
                   repo.kpis.doc_health_score > 0.85
                     ? "good"
@@ -214,7 +209,7 @@ export default function RepoPage({ params }: { params: Promise<{ id: string }> }
                 value={String(repo.kpis.drift_velocity)}
                 numeric={repo.kpis.drift_velocity}
                 hint="doc sentences that lie about the code"
-                tooltip="Number of claims the agents confidently flagged as contradicted by the actual code. Each one has a suggested patch."
+                tooltip="Claims the agents flagged as contradicted by the code. Each has a suggested patch."
                 tone={
                   repo.kpis.drift_velocity === 0
                     ? "good"
@@ -236,7 +231,7 @@ export default function RepoPage({ params }: { params: Promise<{ id: string }> }
                 numeric={repo.kpis.cost_cents / 100}
                 format={(n) => `$${n.toFixed(3)}`}
                 hint="total Claude spend for this run"
-                tooltip="Sum of input + output tokens × model price across every Claude call (extraction, 3-agent verify, consolidator, patcher). Prompt caching is on."
+                tooltip="Total Claude API spend for this run. Prompt caching is on."
                 accent="blue"
               />
               <KpiCard
@@ -246,7 +241,7 @@ export default function RepoPage({ params }: { params: Promise<{ id: string }> }
                 format={(n) => `${n.toFixed(1)}`}
                 suffix="s"
                 hint="time agents spent on Claude calls"
-                tooltip="Sum of every agent's API call duration. Rate-limit throttling adds wait time on top — the wall-clock pipeline run is longer."
+                tooltip="Total seconds across all agent API calls. Rate-limit throttling extends wall-clock time on top."
                 accent="violet"
               />
             </section>

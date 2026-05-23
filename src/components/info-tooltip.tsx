@@ -54,10 +54,11 @@ export function InfoTooltip({
         </TooltipTrigger>
         <TooltipContent
           side={side}
-          align="start"
-          sideOffset={6}
-          collisionPadding={12}
-          className="max-w-[280px] bg-popover border border-border/80 text-foreground text-[12.5px] leading-relaxed font-normal px-3 py-2 shadow-xl shadow-black/40"
+          align="end"
+          sideOffset={8}
+          collisionPadding={16}
+          avoidCollisions
+          className="max-w-[240px] bg-popover/95 backdrop-blur border border-border text-foreground text-[12px] leading-snug font-normal px-3 py-2 shadow-xl shadow-black/50 rounded-lg"
         >
           {text}
         </TooltipContent>

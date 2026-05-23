@@ -79,12 +79,9 @@ export function KpiCard({
       )}
 
       <div className="relative flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10.5px] uppercase tracking-[0.15em] text-muted-foreground/80 font-medium">
-            {label}
-          </span>
-          {tooltip && <InfoTooltip text={tooltip} />}
-        </div>
+        <span className="text-[10.5px] uppercase tracking-[0.15em] text-muted-foreground/80 font-medium">
+          {label}
+        </span>
         {accentColor && (
           <span
             className="w-1.5 h-1.5 rounded-full"
@@ -102,8 +99,11 @@ export function KpiCard({
       </div>
 
       {hint && (
-        <div className="relative mt-2.5 text-[12px] text-muted-foreground/80 leading-snug">
-          {hint}
+        <div className="relative mt-2.5 flex items-center gap-1.5">
+          <span className="text-[12px] text-muted-foreground/80 leading-snug flex-1 min-w-0">
+            {hint}
+          </span>
+          {tooltip && <InfoTooltip text={tooltip} side="top" />}
         </div>
       )}
     </div>
