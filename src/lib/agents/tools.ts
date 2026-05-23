@@ -116,6 +116,53 @@ export const readFileTool: ToolDef = {
   },
 };
 
+/**
+ * Semantic code search via the hybrid retrieval corpus.
+ * Useful when the agent doesn't know the exact symbol name but has a
+ * concept ("request body validation", "JWT expiration", "cart total").
+ * Returns code symbol chunks ranked by BM25 + dense embedding fused via RRF.
+ */
+export const semanticCodeSearchTool: ToolDef = {
+  name: "semantic_code_search",
+  description:
+    "Semantic search across code chunks via BM25 + vector embedding fused with Reciprocal Rank Fusion. " +
+    "Use when you don't know the exact symbol name but need to find code by concept " +
+    "(e.g. 'request body validation with Pydantic', 'JWT expiration', 'discount code handling'). " +
+    "For exact symbol lookup use lookup_symbol; for exact tokens use grep.",
+  input_schema: {
+    type: "object",
+    properties: {
+      query: {
+        type: "string",
+        description: "Conceptual query, in natural language. Not a regex.",
+      },
+      k: { type: "number", description: "Max results (default 5)" },
+    },
+    required: ["query"],
+  },
+  run: async (input, ctx) => {
+    const hits = await hybridSearch({
+      repoId: ctx.repoId,
+      query: String(input.query),
+      kind: "code",
+      k: Number(input.k ?? 5),
+    });
+    if (hits.length === 0) return "(no code chunks matched)";
+    return hits
+      .map((h) => {
+        const meta = h.meta as {
+          path?: string;
+          symbol_name?: string;
+          symbol_kind?: string;
+          line_start?: number;
+          line_end?: number;
+        };
+        return `# ${meta.symbol_name ?? "?"} (${meta.symbol_kind ?? "?"})\n${meta.path}:${meta.line_start}-${meta.line_end}\nbm25_rank=${h.bm25_rank ?? "-"} vec_rank=${h.vec_rank ?? "-"} rrf=${h.rrf_score.toFixed(4)}\n${h.content.slice(0, 800)}`;
+      })
+      .join("\n---\n");
+  },
+};
+
 export const lookupSymbolTool: ToolDef = {
   name: "lookup_symbol",
   description:
@@ -271,6 +318,11 @@ export const readUrlTool: ToolDef = {
   },
 };
 
-export const CODE_TOOLS: ToolDef[] = [grepTool, readFileTool, lookupSymbolTool];
+export const CODE_TOOLS: ToolDef[] = [
+  grepTool,
+  readFileTool,
+  lookupSymbolTool,
+  semanticCodeSearchTool,
+];
 export const HISTORY_TOOLS: ToolDef[] = [gitLogTool, gitBlameTool, diffRangeTool];
 export const WEB_TOOLS: ToolDef[] = [hybridSearchTool, readUrlTool];
