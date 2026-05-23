@@ -2,6 +2,7 @@ import { anthropic } from "@/lib/llm/anthropic";
 import { env } from "@/lib/env";
 import { sql } from "@/lib/db/client";
 import { emitEvent } from "@/lib/events";
+import { reserveAnthropic, estimateTokens } from "@/lib/rate-limit";
 
 const SYSTEM_PROMPT = `You extract atomic, verifiable claims from documentation chunks of a Python project.
 
@@ -46,6 +47,7 @@ const ALLOWED_TYPES = new Set([
 ]);
 
 async function extractFromChunk(chunk: ChunkRow): Promise<RawClaim[]> {
+  await reserveAnthropic(estimateTokens(SYSTEM_PROMPT, chunk.content) + 400);
   const res = await anthropic().messages.create({
     model: env.ANTHROPIC_EXTRACTION_MODEL,
     max_tokens: 1024,

@@ -2,6 +2,7 @@ import { sql } from "@/lib/db/client";
 import { anthropic } from "@/lib/llm/anthropic";
 import { env } from "@/lib/env";
 import { emitEvent } from "@/lib/events";
+import { reserveAnthropic, estimateTokens } from "@/lib/rate-limit";
 import { readFileSafe } from "@/lib/ingest/walk";
 import path from "node:path";
 import { createPatch } from "diff";
@@ -60,6 +61,7 @@ export async function synthesizePatches(repoId: string, repoDir: string): Promis
     if (!original.trim()) continue;
 
     try {
+      await reserveAnthropic(estimateTokens(SYSTEM, original, row.claim_text) + 400);
       const res = await anthropic().messages.create({
         model: env.ANTHROPIC_MODEL,
         max_tokens: 800,

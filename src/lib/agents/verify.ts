@@ -2,6 +2,7 @@ import { sql } from "@/lib/db/client";
 import { emitEvent } from "@/lib/events";
 import { anthropic } from "@/lib/llm/anthropic";
 import { env } from "@/lib/env";
+import { reserveAnthropic, estimateTokens } from "@/lib/rate-limit";
 import { runAgent, type AgentResult } from "./loop";
 import { CODE_TOOLS, HISTORY_TOOLS, WEB_TOOLS, type ToolContext } from "./tools";
 import type { Verdict, Severity, ReferencedEntities } from "@/lib/types";
@@ -40,6 +41,16 @@ If external sources confirm the claim, "supported".
 If external sources contradict (e.g. the dep's CHANGELOG renamed the API), "contradicted".
 If no external source has anything relevant, "unverifiable".`;
 
+function truncArgs(input: Record<string, unknown>): string {
+  return Object.entries(input)
+    .map(([k, v]) => {
+      const sv = typeof v === "string" ? v : JSON.stringify(v);
+      const trimmed = sv.length > 32 ? sv.slice(0, 32) + "…" : sv;
+      return `${k}=${typeof v === "string" ? `"${trimmed}"` : trimmed}`;
+    })
+    .join(", ");
+}
+
 function userPromptForClaim(claim: ClaimRow): string {
   return `CLAIM (from ${claim.source_file}, lines ${claim.source_lines}):
 ${claim.text}
@@ -67,6 +78,7 @@ async function consolidate(claim: ClaimRow, agents: AgentResult[]): Promise<Cons
     )
     .join("\n\n");
 
+  await reserveAnthropic(estimateTokens(summary, claim.text) + 600);
   const res = await anthropic().messages.create({
     model: env.ANTHROPIC_EXTRACTION_MODEL,
     max_tokens: 800,
@@ -140,9 +152,10 @@ export async function verifyClaims(repoId: string, repoDir: string): Promise<{ c
 
   const ctx: ToolContext = { repoId, repoDir };
   let contradicted = 0;
-  // Serial: 3 parallel agent calls per claim, but only one claim at a time.
-  // Anthropic tier-1 caps at 50 RPM / 30k input TPM — we MUST throttle.
-  const CONCURRENCY = 1;
+  // 2 claims in flight = 6 parallel agent calls peak. Safe because the
+  // rate-limit token bucket in src/lib/rate-limit.ts pre-throttles every
+  // Anthropic call to stay under tier-1 RPM/TPM.
+  const CONCURRENCY = 2;
 
   for (let i = 0; i < claims.length; i += CONCURRENCY) {
     const batch = claims.slice(i, i + CONCURRENCY);
@@ -150,6 +163,55 @@ export async function verifyClaims(repoId: string, repoDir: string): Promise<{ c
       batch.map(async (claim) => {
         const userPrompt = userPromptForClaim(claim);
         try {
+          const onProgress = (p: import("./loop").AgentProgress) => {
+            // Forward to the SSE bus as data-bearing events so the UI's
+            // "now playing" widget can render the live tool stream.
+            const claimPreview = claim.text.slice(0, 80);
+            if (p.kind === "tool-start") {
+              emitEvent(repoId, {
+                stage: "verify",
+                level: "info",
+                message: `${p.agent}/${p.tool}(${truncArgs(p.input)})`,
+                data: {
+                  tool_event: "start",
+                  agent: p.agent,
+                  tool: p.tool,
+                  input: p.input,
+                  claim_id: claim.id,
+                  claim_preview: claimPreview,
+                },
+              });
+            } else if (p.kind === "tool-end") {
+              emitEvent(repoId, {
+                stage: "verify",
+                level: "info",
+                message: `${p.agent}/${p.tool} done in ${p.duration_ms}ms`,
+                data: {
+                  tool_event: "end",
+                  agent: p.agent,
+                  tool: p.tool,
+                  input: p.input,
+                  preview: p.preview,
+                  duration_ms: p.duration_ms,
+                  claim_id: claim.id,
+                },
+              });
+            } else if (p.kind === "verdict") {
+              emitEvent(repoId, {
+                stage: "verify",
+                level: "info",
+                message: `${p.agent} → ${p.verdict} (${(p.confidence * 100).toFixed(0)}%)`,
+                data: {
+                  tool_event: "verdict",
+                  agent: p.agent,
+                  verdict: p.verdict,
+                  confidence: p.confidence,
+                  claim_id: claim.id,
+                },
+              });
+            }
+          };
+
           const [code, history, web] = await Promise.all([
             runAgent({
               agent: "code",
@@ -158,6 +220,7 @@ export async function verifyClaims(repoId: string, repoDir: string): Promise<{ c
               tools: CODE_TOOLS,
               ctx,
               maxIterations: 4,
+              onProgress,
             }),
             runAgent({
               agent: "history",
@@ -166,6 +229,7 @@ export async function verifyClaims(repoId: string, repoDir: string): Promise<{ c
               tools: HISTORY_TOOLS,
               ctx,
               maxIterations: 3,
+              onProgress,
             }),
             runAgent({
               agent: "web",
@@ -174,6 +238,7 @@ export async function verifyClaims(repoId: string, repoDir: string): Promise<{ c
               tools: WEB_TOOLS,
               ctx,
               maxIterations: 3,
+              onProgress,
             }),
           ]);
 

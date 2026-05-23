@@ -1,6 +1,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { anthropic } from "@/lib/llm/anthropic";
 import { env } from "@/lib/env";
+import { reserveAnthropic, estimateTokens } from "@/lib/rate-limit";
 import type { ToolDef, ToolContext } from "./tools";
 import type { ToolCall, AgentName } from "@/lib/types";
 
@@ -16,6 +17,33 @@ export type AgentResult = {
   duration_ms: number;
 };
 
+export type AgentProgress =
+  | {
+      kind: "thinking";
+      agent: AgentName;
+      iteration: number;
+    }
+  | {
+      kind: "tool-start";
+      agent: AgentName;
+      tool: string;
+      input: Record<string, unknown>;
+    }
+  | {
+      kind: "tool-end";
+      agent: AgentName;
+      tool: string;
+      input: Record<string, unknown>;
+      preview: string;
+      duration_ms: number;
+    }
+  | {
+      kind: "verdict";
+      agent: AgentName;
+      verdict: AgentResult["verdict"];
+      confidence: number;
+    };
+
 const FINAL_TOOL = {
   name: "submit_verdict",
   description:
@@ -26,16 +54,11 @@ const FINAL_TOOL = {
       verdict: {
         type: "string",
         enum: ["supported", "contradicted", "unverifiable", "partial"],
-        description: "supported = code matches doc; contradicted = code disagrees; unverifiable = you couldn't find evidence; partial = doc partially correct",
+        description:
+          "supported = code matches doc; contradicted = code disagrees; unverifiable = you couldn't find evidence; partial = doc partially correct",
       },
-      confidence: {
-        type: "number",
-        description: "0.0–1.0 confidence in your verdict",
-      },
-      reasoning: {
-        type: "string",
-        description: "1-3 sentence explanation of why",
-      },
+      confidence: { type: "number", description: "0.0–1.0 confidence in your verdict" },
+      reasoning: { type: "string", description: "1-3 sentence explanation of why" },
       evidence: {
         type: "array",
         description: "Concrete evidence: file:line snippets or URL snippets you found",
@@ -62,6 +85,7 @@ export async function runAgent(opts: {
   tools: ToolDef[];
   ctx: ToolContext;
   maxIterations?: number;
+  onProgress?: (p: AgentProgress) => void;
 }): Promise<AgentResult> {
   const start = Date.now();
   const maxIter = opts.maxIterations ?? 6;
@@ -91,6 +115,12 @@ export async function runAgent(opts: {
   } | null = null;
 
   for (let iter = 0; iter < maxIter && !finalResult; iter++) {
+    opts.onProgress?.({ kind: "thinking", agent: opts.agent, iteration: iter + 1 });
+
+    // Estimate input cost and proactively throttle so we stay under tier-1 limits.
+    const lastMsgChars = JSON.stringify(messages).length;
+    await reserveAnthropic(estimateTokens(opts.systemPrompt) + estimateTokens(String(lastMsgChars)));
+
     const res = await anthropic().messages.create({
       model: env.ANTHROPIC_MODEL,
       max_tokens: 1000,
@@ -105,10 +135,7 @@ export async function runAgent(opts: {
 
     messages.push({ role: "assistant", content: res.content });
 
-    if (res.stop_reason !== "tool_use") {
-      // model stopped without submitting; force unverifiable
-      break;
-    }
+    if (res.stop_reason !== "tool_use") break;
 
     const toolResults: Anthropic.ToolResultBlockParam[] = [];
     for (const block of res.content) {
@@ -124,11 +151,14 @@ export async function runAgent(opts: {
           verdict: input.verdict,
           confidence: Math.max(0, Math.min(1, Number(input.confidence) || 0)),
           reasoning: input.reasoning,
-          evidence: (input.evidence ?? []).map((e) => ({
-            ...e,
-            source: opts.agent,
-          })),
+          evidence: (input.evidence ?? []).map((e) => ({ ...e, source: opts.agent })),
         };
+        opts.onProgress?.({
+          kind: "verdict",
+          agent: opts.agent,
+          verdict: finalResult.verdict,
+          confidence: finalResult.confidence,
+        });
         toolResults.push({
           type: "tool_result",
           tool_use_id: block.id,
@@ -137,6 +167,13 @@ export async function runAgent(opts: {
         continue;
       }
       const def = toolMap.get(block.name);
+      const toolStart = Date.now();
+      opts.onProgress?.({
+        kind: "tool-start",
+        agent: opts.agent,
+        tool: block.name,
+        input: block.input as Record<string, unknown>,
+      });
       let output = "(unknown tool)";
       if (def) {
         try {
@@ -145,6 +182,15 @@ export async function runAgent(opts: {
           output = `error: ${(err as Error).message}`;
         }
       }
+      const duration_ms = Date.now() - toolStart;
+      opts.onProgress?.({
+        kind: "tool-end",
+        agent: opts.agent,
+        tool: block.name,
+        input: block.input as Record<string, unknown>,
+        preview: output.slice(0, 240),
+        duration_ms,
+      });
       tool_calls.push({
         tool: block.name,
         input: block.input as Record<string, unknown>,

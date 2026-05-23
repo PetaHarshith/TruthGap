@@ -169,15 +169,112 @@ export function AgentTrace({ agents }: { agents: Agent[] }) {
                       ▸
                     </span>
                   </summary>
-                  <pre className="border-t border-border/40 px-3 py-2.5 bg-background/40 text-[11px] font-mono whitespace-pre-wrap max-h-80 overflow-auto text-foreground/80 leading-relaxed">
-                    {tc.output}
-                  </pre>
+                  {tc.tool === "hybrid_search" ? (
+                    <HybridSearchOutput raw={tc.output} />
+                  ) : (
+                    <pre className="border-t border-border/40 px-3 py-2.5 bg-background/40 text-[11px] font-mono whitespace-pre-wrap max-h-80 overflow-auto text-foreground/80 leading-relaxed">
+                      {tc.output}
+                    </pre>
+                  )}
                 </details>
               ))}
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+type HybridHit = {
+  title: string;
+  url: string;
+  bm25_rank: string;
+  vec_rank: string;
+  rrf: string;
+  snippet: string;
+};
+
+function parseHybridSearch(raw: string): HybridHit[] {
+  if (!raw || raw.includes("(no external sources matched)")) return [];
+  const blocks = raw.split(/\n---\n?/g);
+  const hits: HybridHit[] = [];
+  for (const block of blocks) {
+    const lines = block.split("\n");
+    if (lines.length < 3) continue;
+    const titleLine = lines.find((l) => l.startsWith("# "));
+    const urlLine = lines.find((l) => /^https?:\/\//.test(l.trim()));
+    const metaLine = lines.find((l) => l.includes("rrf="));
+    if (!metaLine) continue;
+    const bm25 = metaLine.match(/bm25_rank=(\S+)/)?.[1] ?? "-";
+    const vec = metaLine.match(/vec_rank=(\S+)/)?.[1] ?? "-";
+    const rrf = metaLine.match(/rrf=(\S+)/)?.[1] ?? "-";
+    const startIdx = lines.indexOf(metaLine) + 1;
+    const snippet = lines.slice(startIdx).join("\n").trim();
+    hits.push({
+      title: (titleLine ?? "# ?").replace(/^# /, ""),
+      url: urlLine?.trim() ?? "",
+      bm25_rank: bm25,
+      vec_rank: vec,
+      rrf,
+      snippet,
+    });
+  }
+  return hits;
+}
+
+function HybridSearchOutput({ raw }: { raw: string }) {
+  const hits = parseHybridSearch(raw);
+  if (hits.length === 0) {
+    return (
+      <div className="border-t border-border/40 px-3 py-3 bg-background/40 text-[11px] font-mono text-muted-foreground/70 italic">
+        no external sources matched
+      </div>
+    );
+  }
+  return (
+    <div className="border-t border-border/40 bg-background/40">
+      <div className="px-3 py-2 flex items-center gap-3 border-b border-border/40 text-[10px] font-mono uppercase tracking-[0.1em] text-muted-foreground/70">
+        <span className="flex-1">source</span>
+        <span className="w-12 text-right">bm25</span>
+        <span className="w-12 text-right">vec</span>
+        <span className="w-16 text-right">rrf score</span>
+      </div>
+      <div className="max-h-80 overflow-auto">
+        {hits.map((h, i) => (
+          <div
+            key={i}
+            className="border-b border-border/30 last:border-b-0 px-3 py-2 hover:bg-muted/10 transition-colors"
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="text-[12px] font-mono text-foreground/90 truncate">{h.title}</div>
+                <div className="text-[10px] font-mono text-muted-foreground/60 truncate">
+                  {h.url}
+                </div>
+              </div>
+              <span className="w-12 text-right text-[11px] font-mono tabular-nums text-sky-300">
+                {h.bm25_rank}
+              </span>
+              <span className="w-12 text-right text-[11px] font-mono tabular-nums text-emerald-300">
+                {h.vec_rank}
+              </span>
+              <span className="w-16 text-right text-[11px] font-mono tabular-nums text-violet-300">
+                {Number(h.rrf).toFixed(4)}
+              </span>
+            </div>
+            {h.snippet && (
+              <pre className="mt-1.5 text-[11px] font-mono text-foreground/75 whitespace-pre-wrap leading-snug max-h-24 overflow-hidden">
+                {h.snippet.slice(0, 360)}
+              </pre>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="px-3 py-1.5 border-t border-border/40 text-[10px] font-mono text-muted-foreground/60 flex items-center justify-between">
+        <span>RRF fusion · score = Σ 1/(60 + rank_i)</span>
+        <span>{hits.length} hits</span>
+      </div>
     </div>
   );
 }
